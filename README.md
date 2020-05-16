@@ -65,7 +65,12 @@ WSManStackVersion              3.0
 最后 PowerShell 页面样式是这样的
 ![](images/final.png)
 
-### 1.3 编码和测试
+### 1.3 热身
+
+#### 1.3.0 Get-Command
+
+
+
 
 #### 1.3.1 Get-Help 
 
@@ -125,17 +130,90 @@ REMARKS
     For online help, type: "get-help Get-ChildItem -online"
 ```
 
-如果你的 `Get-Help` 没有输出相应的内容，使用 `Update-Help` 命令更新一下。
+如果你的 `Get-Help` 没有输出相应的内容，使用 `Update-Help` 命令更新一下。当然也可以在每个命令最后添加 `-?` 就可以打开相应的帮助文档。
+
+每个命令的帮助文档看上去密密麻麻，让人劝退的感觉，下面以 `Get-Service` 的帮助文档解释做进一步解释。 
+![](./images/get_service_parameter.png)
+
+可以知道 Get-Service 主要有三种使用方式，每一种方式的参数叫做 `ParameterSet`，不同参数用不同的方式形式修饰，主要有下面几种: 
+
+|     形式     	|            含义             |
+|:------------	|:-------------------------- |
+| [[-Param] T] 	| 可选参数，参数名可以省略      |
+| [-Param T]   	| 可选参数，参数名不可以省略 	|
+| -Param T     	| 必选参数                   	|
+| [-Param]     	| 开关参数                   	|
+
+
+#### 1.3.4 Ge-Member
+
+既然我们已经知道在 Powershell 中传递的是 Object，我们都知道谈到对象就需要涉及到 `property` 和 `class` 等等，那么如何该如何知道在 PowerShell 中了解到这些信息呢？答案就是调用 `Get-Member` 方法，举例来讲
+
+```ps
+Get-Service | Get-Memeber
+
+
+   TypeName: System.ServiceProcess.ServiceController
+
+Name                      MemberType    Definition
+----                      ----------    ----------
+Name                      AliasProperty Name = ServiceName
+RequiredServices          AliasProperty RequiredServices = ServicesDependedOn
+Disposed                  Event         System.EventHandler Disposed(System.Object, System.EventArgs)
+Close                     Method        void Close()
+Continue                  Method        void Continue()
+CreateObjRef              Method        System.Runtime.Remoting.ObjRef CreateObjRef(type requestedType)
+Dispose                   Method        void Dispose(), void IDisposable.Dispose()
+Equals                    Method        bool Equals(System.Object obj)
+ExecuteCommand            Method        void ExecuteCommand(int command)
+GetHashCode               Method        int GetHashCode()
+GetLifetimeService        Method        System.Object GetLifetimeService()
+GetType                   Method        type GetType()
+InitializeLifetimeService Method        System.Object InitializeLifetimeService()
+Pause                     Method        void Pause()
+Refresh                   Method        void Refresh()
+Start                     Method        void Start(), void Start(string[] args)
+Stop                      Method        void Stop()
+WaitForStatus             Method        void WaitForStatus(System.ServiceProcess.ServiceControllerStatus desiredStatus), void WaitForStatus(Syst... 
+CanPauseAndContinue       Property      bool CanPauseAndContinue {get;}
+CanShutdown               Property      bool CanShutdown {get;}
+CanStop                   Property      bool CanStop {get;}
+Container                 Property      System.ComponentModel.IContainer Container {get;}
+DependentServices         Property      System.ServiceProcess.ServiceController[] DependentServices {get;}
+DisplayName               Property      string DisplayName {get;set;}
+MachineName               Property      string MachineName {get;set;}
+ServiceHandle             Property      System.Runtime.InteropServices.SafeHandle ServiceHandle {get;}
+ServiceName               Property      string ServiceName {get;set;}
+ServicesDependedOn        Property      System.ServiceProcess.ServiceController[] ServicesDependedOn {get;}
+ServiceType               Property      System.ServiceProcess.ServiceType ServiceType {get;}
+Site                      Property      System.ComponentModel.ISite Site {get;set;}
+StartType                 Property      System.ServiceProcess.ServiceStartMode StartType {get;}
+Status                    Property      System.ServiceProcess.ServiceControllerStatus Status {get;}
+ToString                  ScriptMethod  System.Object ToString();
+```
+`Get-Member` 方法会对于通过 `pipeline` 输入的每个类型进行展示，对于 `Get-Sevice` 所有输出都是 `ystem.ServiceProcess.ServiceController` 类型，下面展示了所有的这个对象包含的 `Method` 和 `Property`，除此之外还有 `AliasProperty`，它是 PowerShell 为输出结果添加的。既然 `ServiceController` 类型包含很多属性，但是为什么只有三个属性展示呢？它是由 `$PSHome\DotNetType.format.ps1xml` 格式化文件控制各个类型的输出
+
+![](images/type_format.png)
+
+从中我们可以知道 `ServieController` 对象只输出 `Status`, `Name` 和 `DispalyName` 三个属性。
+
 
 #### 1.3.2 PowerShell Gallery
 
-正如 NuGet 包一样，PowerShell 也也有一个包仓库: [Powershell Gallery](https://www.powershellgallery.com/)，比如说安装 `NetworkingDsc` 这个包
+正如 NuGet 包一样，PowerShell 也也有一个包仓库: [Powershell Gallery](https://www.powershellgallery.com/)，比如说安装 `PSSoftware` 这个模块
 
 ```ps
 Install-Module -Name PSSoftware
 ```
 
-通常这个命令是需要管理员权限执行，在安装完毕后，就可以使用 `PSSoftware` 包提供的[命令](https://github.com/adbertram/PSSoftware)。
+通常这个命令是需要管理员权限执行，在安装完毕后，就可以使用 `PSSoftware` 包提供的[命令](https://github.com/adbertram/PSSoftware)。可以通过下面的命令查看这个模块下所有 PowerShell 命令。
+
+```ps
+Get-Command -Module PSSofteware
+```
+
+它会显示出这个模块下全部可以用的命令。
+
 
 #### 1.3.3 IDE
 
@@ -145,7 +223,31 @@ Install-Module -Name PSSoftware
 - Visual Studio Code. 这是一个跨平台的代码编辑器，安装相关的插件可以搭建 PowerShell 开发环境
 - Jupyter Notebook. 如果你是 Python 的开发这，对这个开发工具肯定是非常熟悉，现在它也有了 PowerShell 的 [kernel](https://devblogs.microsoft.com/powershell/public-preview-of-powershell-support-in-jupyter-notebooks/)。
 
+#### 1.3.4 Alias
+
+通常来讲 PowerShell 的命令比较长（主要是为了方便记忆和理解），虽然自动补全可以帮助我们减少一些工作量，但是我们还是想要用更少的键盘敲击来完成命令，所以提供了 PowerShell 别名的方式。
+
+```ps
+Get-Alias
+```
+
+可以列出全部可用的 alias，也可以查看某个具体的 alias，比如说 
+
+```ps
+-> Get-Alias -Definition Get-ChildItem
+
+CommandType     Name                                               Version    Source
+-----------     ----                                               -------    ------
+Alias           dir -> Get-ChildItem
+Alias           gci -> Get-ChildItem
+Alias           ls -> Get-ChildItem
+```
+`dir`, `gci` 和 `ls` 都是 Get-ChildItem 的别名，其中 `dir` 是 DOS 继承过来，`gci` 是命令首字母缩写而 `ls` 则是 *nix 系统下的命令。
+
+而 `New-Alias` 可以自己创建相关的别名，比如 `New-Alias -Name "ll" -Value Get-ChildItem` 表示为 Get-ChildItem 创建了 `ll` 的别名。
+
 ## 2 语法
+
 
 ## 3 最佳实践
 
