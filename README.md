@@ -248,6 +248,55 @@ Alias           ls -> Get-ChildItem
 
 ## 2 语法
 
+### 2.1 类型
+
+我们都知道，脚本语言一般是动态语言，也就是说在运行的过程中也能修改变量的类型，所以 PowerShell 也是动态语言的一种。但是从某种意义上来讲，PowerShell 又是类型混合体，比如说你要从一个对象 `foo` 中获取属性 `Y`，它并不关心是 `foo` 是否属性对象 `X`，而是更关系 `foo` 是否有属性 `Y`。
+
+PowerShell 有自己的成员（member)解析策略，分别为 
+  
+- Synthetic
+
+PowerShell 提供了 `PSObject` 的封装器，用户可以创建一个实例，并且添加自己想要的属性。而且它只影响实例，而不影响 `PSOBject` 类型。
+
+- Native
+Native 就是指的是 PowerShell 对象指定的 .Net 的对象，同样要包含 `WMI` 和 `COM` 对象。
+
+```ps
+➜  ~ get-date | gm
+
+   TypeName: System.DateTime
+
+Name                 MemberType     Definition
+----                 ----------     ----------
+...
+Subtract             Method         timespan Subtract(datetime value), datetime Subtract(timespan value)
+ToBinary             Method         long ToBinary()
+ToBoolean            Method         bool IConvertible.ToBoolean(System.IFormatProvider provider)
+ToByte               Method         byte IConvertible.ToByte(System.IFormatProvider provider)
+ToChar               Method         char IConvertible.ToChar(System.IFormatProvider provider)
+ToType               Method         System.Object IConvertible.ToType(type conversionType, System.IFormatProvider provider)
+ToUInt16             Method         uint16 IConvertible.ToUInt16(System.IFormatProvider provider)
+ToUInt32             Method         uint32 IConvertible.ToUInt32(System.IFormatProvider provider)
+ToUInt64             Method         uint64 IConvertible.ToUInt64(System.IFormatProvider provider)
+ToUniversalTime      Method         datetime ToUniversalTime()
+DisplayHint          NoteProperty   DisplayHintType DisplayHint=DateTime
+Date                 Property       datetime Date {get;}
+Day                  Property       int Day {get;}
+DayOfWeek            Property       System.DayOfWeek DayOfWeek {get;}
+Second               Property       int Second {get;}
+Ticks                Property       long Ticks {get;}
+TimeOfDay            Property       timespan TimeOfDay {get;}
+Year                 Property       int Year {get;}
+DateTime             ScriptProperty System.Object DateTime {get=if ((& { Set-StrictMode -Version 1; $this.DisplayHint }) -ieq  "Date")...
+...
+```
+
+- Fallback
+这是 PowerShell Runtime 为其添加的类型，并且用户不能修改。
+
+#### 2.1.1 字面字符串
+
+
 
 ## 3 最佳实践
 
