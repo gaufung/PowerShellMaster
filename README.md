@@ -295,6 +295,103 @@ DateTime             ScriptProperty System.Object DateTime {get=if ((& { Set-Str
 这是 PowerShell Runtime 为其添加的类型，并且用户不能修改。
 
 #### 2.1.1 字面字符串
+在 PowerShell 中有两种方式表示字面字符串，分别使用单引号和双引号表示。它们有一个显著的的区别是在双引号中可以做变量替换，或者 PowerShell 表达式计算，具体个例子
+
+```ps
+PS> $foo = "FOO"
+PS> "This is a string in double quotes: $foo"
+This is a string in double quotes: FOO
+
+PS> 'This is a string in single quotes: $foo'
+This is a string in single quotes
+```
+我们可以看到在双引号的字符串中，`$foo` 变量被正确的替换成了 `FOO`，如果不想在双引号中替换做变量替换怎么办呢？在变量前添加中间隔符号
+
+```ps
+PS> $foo = "BAR"
+PS> "`$foo is $foo"
+$foo is BAR
+```
+同样也可以在双引号字符串中做 PowerShell 相关的表达式计算。
+
+```ps
+PS> $date=Get-Date
+PS> "Today is week of $($date.DayOfWeek)"
+Today is week of Wednesday
+```
+这有点像 C# 中字符串内插格式化。还有一种字符串表示方法叫做 `here string`, 具体使用如下
+
+```ps
+PS> $a = @"
+One is "1"
+Two is "2"
+Three is $(2+1)
+The date is "$(Get-Date)"
+"@
+PS> $a
+One is "1"
+Two is "2"
+Three is 3
+The data is "Wednesday, May 20, 2020 8:50:37 PM"
+```
+用 `@"` 和 `"@` 包围的都是字符串的一部分，并且也能做相应的表达式计算，但是要注意 `@"` 之后的内容必须要空一行，而 `"@` 也必须要另起一行开始。
+
+#### 2.1.2 数字和字面数值
+
+对于字面数值，`PowerShell` 能自动帮你选择最合适的类型，对于整数类型，会选择 `int32` 类型，对于超出 `int32` 类型能表示的范围之外的整数，则选择 `int64` 类型；而对于小数，默认选择 `double` 类型，除非在数值前指定 `[float]`，则使用单精度表示，最后对于 `decimal` 类型，需要在后面添加 `d` 后缀表示。
+
+除此之外，PowerShell 还支持 `KB`, `MB` 或者 `GB` 等等后缀，相当于表示 `1024`，`1024 * 1024` 和 `1024 * 1024 * 1024` 相应的数值。
+
+#### 2.1.3 字典
+
+字典是存储键值对的容器，它的表示构造方法非常简单
+```ps
+PS> $user = @{ FirstName = "John"; LastName = "Smith"; PhoneNumber = "555-1212"}
+```
+
+可以通过 `@{` 和  `}` 来创建一个字典，如果知道了键，有两种方式去访问其对应的值。
+```ps
+PS> $user.firstname
+John
+PS> $user["lastName"]
+Smith
+```
+也可以通过键的数组访问多个值
+
+```ps
+PS> $user['firstName', 'lastname'];
+John
+Smith
+```
+
+有一点要注意的是，在 PowerShell 中，字典是一个标量，也就是说在 `foreach` 语句中迭代一个字典并不会和 C# 一样每次迭代一个 `Key-Value` 对，而是一个整体对象。那么该如何枚举字典中的对象呢？有两种方法：
+1. 迭代字典的 `Keys` 和 `Values` 属性
+2. 调用 `GetEnumerator()` 方法，迭代 `Key-Value` 对
+
+还有，字典中的数据迭代是无序的，跟插入的顺序没有关系。所以如果想要有序的字典，请在字典申明之前添加 `[ordered]` 前缀。我们都知道在 C# 中字典是引用传递，在 PowerShell 中也是同样如此，如果两个变量表示同一个字段对象，那么它们的修改在另一个变量中也能看得到。如果想要避免引用传递带来的问题，请调用 `clone()` 的方法来赋值个另一个变量。
+
+#### 2.1.4 数组
+PowerShell 中没有一个关于数组的明确定义，接下来将使用一些例子来展示一下数组的表示和使用
+
+```ps
+PS> $a = 1, 2, 3
+PS> $a.GetType().FullName
+System.Object[]
+PS> $a[0] = 3.1415
+PS> $a[2] = 'Hi there'
+PS> $a += 22, 33
+PS> $a.Length
+5
+PS> $a[4]
+33
+PS> (, 1).Length
+1
+PS> @().Length
+0
+```
+
+还要强调的一点是数组也是引用传递的，如果想要消除这种影响，请使用 `clone()` 方法。
+
 
 
 
