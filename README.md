@@ -393,7 +393,249 @@ PS> @().Length
 还要强调的一点是数组也是引用传递的，如果想要消除这种影响，请使用 `clone()` 方法。
 
 
+### 2.2  操作符
 
+运算是 PowerShell 的重要组成部分，也是我们编程的目的之一。使用 `Get-Help Operator` 命令可以显示所有的操作符运算
+
+![](./images/operator.png)
+
+从种我们可以知道 PowerShell 支持多种运算操作，接下来我们就一一进行介绍。
+
+#### 2.2.1 算术运算
+主要包含了 `+`, `-`, `*`, `/` 和 `%` 五种算数运算。
+对于加法运算，规则如下：
+
+- 左边为数值，尝试将右边的操作数转换为数值，然后相加
+- 左边为字符串，尝试将右边的操作数转换为字符串，然后字符串合并
+- 左边为数组集合，如果右边是标量，将其添加到集合中
+- 左边为数组集合，如果右边也是集合，将右边集合添加到左边，拼接起来
+
+```ps
+PS> 1 + '123'
+1123
+PS> "HelloWorld" + 1
+HelloWorld1
+PS> $a = 1, 2, 3
+PS> $a + 4
+1
+2
+3
+4
+PS> $b = "Hello", "World"
+PS> $a + $b
+1
+2
+3
+4
+Hello
+World
+```
+
+对于乘法，只支持数组，字符串和数组三种类型，更具体地一点是右边地操作数只支持数值。
+
+- 如果左边地操作符是字符串，那么相等于重复字符串若干次
+- 如果左边的操作符是数组，那么相当于重复数组内容若干次
+
+对于剩下的运算符，更多的是数学意义上的运算，要注意的一点是在 PowerShell 中，除法运算更多的是数学意义上的除法，也就是说并不会说出现类似 `C#` 语言中的 `5/4=1` 这种情况。
+
+#### 2.2.2 赋值运算
+
+赋值运算主要包含如下几种 `=`, `+=`, `-=`, `*=`, `/=` 和 `%=`，其作用和其他语言类似，所以不必过多解释。值得注意的是在 PowerShell 中可以多个赋值，就跟 Python 或者 Go 语言中一样，比如使用下面语句交换两个变量
+
+```ps
+PS> $a, $b = $b, $a
+```
+
+#### 2.2.3 比较操作
+
+PowerShell 中包含了大量的比较操作，主要有 `eq`, `ne`, `gt`, `ge`, `lt` 和 `le` 几类和相应的大小写敏感（`c`）和大小写不敏感( `i` ) 三类组成，其中默认为大小写不敏感。
+
+对于标量数据而言，它的比较就是字面上意思的比较，比如说：
+
+```ps
+PS> 123 -lt 123.4
+True
+PS> 'abc' -eq 'ABC'
+True
+PS> 'abc' -ceq 'ABC'
+False
+```
+
+如果左边的操作数是数组，那么就判断数组中的元素匹配右边的元素
+
+```ps
+PS> 1, '2', 3, 2, '1' -eq '2'
+2
+2
+PS> 1, '2', 3, 2, '1' -gt '2'
+3
+```
+
+当然也可以使用 `-contains`, `-notcontains`, `-in` 和 `-nin` 等方式表达，返回 `True` 或者 `False`。
+
+```ps
+PS> 1, 2, 3 -contains 2
+True
+```
+
+#### 2.2.4 模式匹配
+这里涉及到更多的是文本相关的操作，主要有以下几类操作 `-like`, `-notlike`, `-match`, `-notmatch`, `-replace`, `-split` 和 `-join` 几种。
+
+`like` 和 `notlike` 是一种宽匹配，比如如下 
+
+```ps
+PS> 'one' -like 'o*'
+True
+PS> 'one' -like 'o[mn]*'
+True
+PS> 'aXc' -like 'a?c'
+True
+PS> 'ahc' -like 'a[d-s]c'
+True
+```
+
+`match` 和 `replace` 是采用正则的方式进行匹配，如下
+
+```ps
+PS> 'Hello' -match '[jkl]'
+$true
+PS> 'Hello' -notmatch '[jkl]'
+$false
+PS> 'Hello' -replace 'ello', 'i'
+Hi
+PS> 'abcde' -replace 'bcd'
+ae
+```
+
+`split` 和 `join` 是针对集合和字符串两种类型的操作，join 可以将字符串集合中的元素合并起来成一个字符串
+
+```ps
+PS> $in = 1, 2, 3
+PS> -join $in
+123
+```
+
+如果 join 作为二元操作符的话，可以接受一个字符串作为连接的参数
+
+```ps
+PS> $numbers = 1,2,3
+PS> $exp = $number -join '+'
+1+2+3
+```
+
+`split` 是 `join` 的相反操作，如果作为一元操作符，它将字符串的空白符作为拆分边界
+
+```ps
+PS> $a="Hello World   Powershell !"
+PS> -split $a
+Hello
+World
+Powershell
+!
+```
+
+对于二元操作，则可以指定拆分的字符串
+
+```ps
+PS> $a = "a:b:c"
+PS> $a -split ':'
+a
+b
+c
+```
+
+#### 2.2.5 类型操作符
+
+有关类型的操作符主要有以下几个 `is`, `isnot` 和 `as`, 如果你熟悉 `C#` 语法，不难猜出它们代表的意思 
+
+```ps
+PS> $true -is [bool]
+True
+PS> $true -is [ValueType]
+True
+PS> "Hi" -is [ValueType]
+False
+PS> $true -isnot [string]
+$true
+PS> '123' -as [int]
+123
+PS> 123 -as 'string'
+123
+```
+
+#### 2.2.6 数组操作符
+
+在 PowrerShell 中数组被广泛使用，关于数组操作符也是最多的。首先可以是使用逗号创建数组，注意都好的优先级比较高
+
+```ps
+PS> 1, 2, 1+2
+1
+2
+1
+2
+PS> 1, 2, (1+2)
+1
+2
+3
+```
+
+也可以使用范围操作符创建数组，分别代表了 lower bound 和 upper bound。
+
+```ps
+PS> 1..5
+1
+2
+3
+4
+5
+```
+
+数组的所应也是一个表达式，同时也支持负数，表示倒数第几个
+
+```ps
+PS> $a = 1, 2, 3
+PS> $a[0]
+1
+PS> $a[-1]
+3
+```
+数组的索引也支持切片，也就是传入一个索引的数组，然后返回相应位置的值
+
+```ps
+$PS> $a = 1..9
+$PS> $a[2..4]
+3
+4
+5
+```
+
+
+#### 2.2.7 属性和方法操作符
+
+在 PoweShell 中可以使用 `dot` 符来使用对象的属性和方法，比如说 
+
+```ps
+PS> "Hello world!".Length
+12
+PS> "Hello world!".substring(3);
+lo world!
+```
+
+而且可以使用字符的方式来访问属性和方法 
+
+```ps
+PS> $prop='length'
+PS> "Hello World'.$prop
+11
+```
+
+通过 `::` 来访问对象的静态方法
+
+```ps
+PS> $t=[string]
+PS> $t::join('+', (1,2,3));
+1+2+3
+```
 
 ## 3 最佳实践
 
